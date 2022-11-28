@@ -4,6 +4,6 @@
     <DebuggerFlavor>ProjectDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup>
-    <ActiveDebugProfile>ASC.WebApi-Production</ActiveDebugProfile>
+    <ActiveDebugProfile>ASC.WebApi-Development</ActiveDebugProfile>
   </PropertyGroup>
 </Project>

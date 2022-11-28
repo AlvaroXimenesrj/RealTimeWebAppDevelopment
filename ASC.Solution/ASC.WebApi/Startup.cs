@@ -1,5 +1,9 @@
 ﻿using ASC.WebApi.Configuration;
+using ASC.WebApi.Identity;
+using ASC.WebApi.Models;
+using ASC.WebApi.Services;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
@@ -34,6 +38,7 @@ namespace ASC.WebApi
             //services.AddSingleton(typeof(IConverter), new SynchronizedConverter(new PdfTools()));
             //services.AddSignalR();
             #region Newtonsoft
+            services.AddControllers();
             //services.AddControllers().AddNewtonsoftJson(options =>
             //{
             //    //options.SerializerSettings.ContractResolver = new DefaultContractResolver();
@@ -44,27 +49,32 @@ namespace ASC.WebApi
 
             #region Identity
 
-            //services.AddDbContext<ApplicationDbContext>(options =>
-            //options.UseSqlServer(Configuration.GetConnectionString("InvictusConnection"),
-            //providerOptions =>
-            //    providerOptions.EnableRetryOnFailure()));
+            services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"),
+            providerOptions =>
+            providerOptions.EnableRetryOnFailure()));
+
+//            services.AddIdentity<ApplicationUser, IdentityRole>()
+//.AddEntityFrameworkStores<ApplicationDbContext>()
+//.AddDefaultTokenProviders();
+
             //services.AddDbContext<InvictusDbContext>(options => options.UseSqlServer(Configuration
             //    .GetConnectionString("InvictusConnection", providerOptions => providerOptions.EnableRetryOnFailure())));
             // options.EnableRetryOnFailure())
             //SqlMapper.AddTypeMap(typeof(TipoTransacao), new TransacaoHandler());
 
-            //services.AddDefaultIdentity<IdentityUser>(opts =>
-            //{
-            //    opts.Password.RequiredLength = 8;
-            //    opts.Password.RequireDigit = false;
-            //    opts.Password.RequireLowercase = true;
-            //    opts.Password.RequireUppercase = true;
-            //    opts.Password.RequireNonAlphanumeric = false;
-            //})
-            //    .AddRoles<IdentityRole>()
-            //    .AddErrorDescriber<IdentityMensagensPortugues>()
-            //    .AddEntityFrameworkStores<ApplicationDbContext>()
-            //    .AddDefaultTokenProviders();
+            services.AddDefaultIdentity<ApplicationUser>(opts =>
+            {
+                opts.Password.RequiredLength = 8;
+                opts.Password.RequireDigit = false;
+                opts.Password.RequireLowercase = true;
+                opts.Password.RequireUppercase = true;
+                opts.Password.RequireNonAlphanumeric = false;
+            })
+                .AddRoles<IdentityRole>()
+                //.AddErrorDescriber<IdentityMensagensPortugues>()
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
 
             //services.Configure<IdentityOptions>(options =>
             //{
@@ -188,6 +198,8 @@ namespace ASC.WebApi
             //);
 
             #endregion
+            services.AddTransient<IEmailSender, AuthMessageSender>();
+            services.AddTransient<ISmsSender, AuthMessageSender>();
             //services.AddScoped<ITemplate, TemplateGenerator>();
             //services.AddScoped<IRelatorioApp, RelatorioApp>();
             //services.AddHostedService<LongRunningService>();
