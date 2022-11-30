@@ -103,7 +103,15 @@ namespace ASC.WebApi
             #region AutoMApper
             //services.AddAutoMapperConfiguration();
             #endregion
+            services.AddDistributedMemoryCache();
 
+            services.AddSession(options =>
+            {
+               // options.Cookie.Name = ".MeuCookie.Session";
+                options.IdleTimeout = TimeSpan.FromSeconds(10000);
+               // options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
             services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             services.AddEndpointsApiExplorer();
@@ -214,11 +222,13 @@ namespace ASC.WebApi
             app.UseSwaggerUI(s =>
             {
                 s.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-            });            
+            });
 
-            //app.UseCors("EnableCORS");
+            //app.UseCors("EnableCORS");           
 
             app.UseRouting();
+
+            app.UseSession();
 
             app.UseAuthentication();
 
