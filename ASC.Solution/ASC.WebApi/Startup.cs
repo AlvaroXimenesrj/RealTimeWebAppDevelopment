@@ -1,9 +1,10 @@
 ﻿using ASC.WebApi.Configuration;
-using ASC.WebApi.Identity;
+using ASC.WebApi.Data;
 using ASC.WebApi.Models;
 using ASC.WebApi.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
@@ -65,13 +66,15 @@ namespace ASC.WebApi
 
             services.AddDefaultIdentity<ApplicationUser>(opts =>
             {
-                opts.Password.RequiredLength = 8;
-                opts.Password.RequireDigit = false;
-                opts.Password.RequireLowercase = true;
-                opts.Password.RequireUppercase = true;
+                opts.SignIn.RequireConfirmedEmail = true;
+                opts.Password.RequiredLength = 6;
+                //opts.Password.RequireDigit = false;
+                //opts.Password.RequireLowercase = true;
+                //opts.Password.RequireUppercase = true;
                 opts.Password.RequireNonAlphanumeric = false;
             })
                 .AddRoles<IdentityRole>()
+                //.AddUserManager<UserManager<ApplicationUser>>()
                 //.AddErrorDescriber<IdentityMensagensPortugues>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
@@ -103,6 +106,8 @@ namespace ASC.WebApi
             #region AutoMApper
             //services.AddAutoMapperConfiguration();
             #endregion
+
+            #region MEMORY CACHE
             services.AddDistributedMemoryCache();
 
             services.AddSession(options =>
@@ -112,6 +117,9 @@ namespace ASC.WebApi
                // options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
+
+            #endregion
+
             services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             services.AddEndpointsApiExplorer();
@@ -208,6 +216,8 @@ namespace ASC.WebApi
             #endregion
             services.AddTransient<IEmailSender, AuthMessageSender>();
             services.AddTransient<ISmsSender, AuthMessageSender>();
+            services.AddScoped<IIdentitySeed, IdentitySeed>();
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             //services.AddScoped<ITemplate, TemplateGenerator>();
             //services.AddScoped<IRelatorioApp, RelatorioApp>();
             //services.AddHostedService<LongRunningService>();
@@ -216,7 +226,7 @@ namespace ASC.WebApi
 
 
         }
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IIdentitySeed storageSeed)
         {
             app.UseSwagger();
             app.UseSwaggerUI(s =>
@@ -224,7 +234,7 @@ namespace ASC.WebApi
                 s.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
             });
 
-            //app.UseCors("EnableCORS");           
+            app.UseCors("EnableCORS");           
 
             app.UseRouting();
 
@@ -242,6 +252,10 @@ namespace ASC.WebApi
                 //endpoints.MapHub<ChartHub>("/chart");
                 //.RequireCors(MyAllowSpecificOrigins); ;
             });
+
+            //storageSeed.Seed(//app.ApplicationServices.GetService<UserManager<ApplicationUser>>(),
+            //   // app.ApplicationServices.GetService<RoleManager<IdentityRole>>(),
+            //    app.ApplicationServices.GetService<IOptions<ApplicationSettings>>()!);
         }        
     }
 }
