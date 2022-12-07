@@ -1,6 +1,7 @@
 ﻿using ASC.Models.Core;
 using ASC.Utilities;
 using ASC.WebApi.Models;
+using ASC.WebApi.Models.AccountViewModels;
 using ASC.WebApi.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -20,7 +21,7 @@ namespace ASC.WebApi.Controllers
         private readonly IEmailSender _emailSender;
         private readonly ISmsSender _smsSender;
         private readonly ILogger _logger;
-       // private readonly string _externalCookieScheme;
+        // private readonly string _externalCookieScheme;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
@@ -32,7 +33,7 @@ namespace ASC.WebApi.Controllers
         {
             _userManager = userManager;
             _signInManager = signInManager;
-           // _externalCookieScheme = identityCookieOptions.Value.ExternalCookieAuthenticationScheme;
+            // _externalCookieScheme = identityCookieOptions.Value.ExternalCookieAuthenticationScheme;
             _emailSender = emailSender;
             _smsSender = smsSender;
             _logger = loggerFactory.CreateLogger<AccountController>();
@@ -51,7 +52,7 @@ namespace ASC.WebApi.Controllers
         //    return Ok();// View();
         //}
 
-        
+
         // POST: /Account/Login
         [HttpPost]
         [AllowAnonymous]
@@ -113,7 +114,7 @@ namespace ASC.WebApi.Controllers
                 }
             }
             // If we got this far, something failed, redisplay form
-            
+
             return Ok();
         }
         /*
@@ -311,13 +312,14 @@ namespace ASC.WebApi.Controllers
         {
             return View();
         }
-
+        */
         //
+
         // POST: /Account/ForgotPassword
         [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        //[ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordViewModel model)
         {
             if (ModelState.IsValid)
             {
@@ -325,21 +327,27 @@ namespace ASC.WebApi.Controllers
                 if (user == null || !(await _userManager.IsEmailConfirmedAsync(user)))
                 {
                     // Don't reveal that the user does not exist or is not confirmed
-                    return View("ResetPasswordEmailConfirmation");
+                    return Ok();
+                    // return View("ResetPasswordEmailConfirmation");
                 }
 
                 // Send an email with this link
+                var protocol = HttpContext.Request.Scheme;
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var callbackUrl = Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
-                await _emailSender.SendEmailAsync(model.Email, "Reset Password",
-                   $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
-                return View("ResetPasswordEmailConfirmation");
+                var callbackUrl = $"https://localhost:4200/main/reset-password?code={code}";
+                //Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
+                //await _emailSender.SendEmailAsync(model.Email, "Reset Password",
+                //   $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
+
+                return Ok();
+                // return View("ResetPasswordEmailConfirmation");
             }
 
             // If we got this far, something failed, redisplay form
-            return View(model);
+            return Ok();
+            //return View(model);
         }
-
+        /*
         //
         // GET: /Account/ForgotPasswordConfirmation
         [HttpGet]
