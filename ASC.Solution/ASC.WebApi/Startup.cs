@@ -181,6 +181,7 @@ namespace ASC.WebApi
 
             services.AddOptions();
             services.Configure<ApplicationSettings>(Configuration.GetSection("AppSettings"));
+            services.Configure<AuthTokenSettings>(Configuration.GetSection("AuthTokenSettings"));
 
             #region JWT
             //var appSettingsSection = Configuration.GetSection("AppSettings");
@@ -253,9 +254,9 @@ namespace ASC.WebApi
                 //.RequireCors(MyAllowSpecificOrigins); ;
             });
 
-            //storageSeed.Seed(//app.ApplicationServices.GetService<UserManager<ApplicationUser>>(),
-            //   // app.ApplicationServices.GetService<RoleManager<IdentityRole>>(),
-            //    app.ApplicationServices.GetService<IOptions<ApplicationSettings>>()!);
+            storageSeed.Seed(//app.ApplicationServices.GetService<UserManager<ApplicationUser>>(),
+                             // app.ApplicationServices.GetService<RoleManager<IdentityRole>>(),
+                app.ApplicationServices.GetService<IOptions<ApplicationSettings>>()!);
         }        
     }
 }

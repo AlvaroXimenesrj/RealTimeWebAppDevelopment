@@ -8,7 +8,13 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Text.Json;
+using System.Text;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
+using ASC.WebApi.Configuration;
 
 namespace ASC.WebApi.Controllers
 {
@@ -21,6 +27,7 @@ namespace ASC.WebApi.Controllers
         private readonly IEmailSender _emailSender;
         private readonly ISmsSender _smsSender;
         private readonly ILogger _logger;
+        private readonly AuthTokenSettings _authTokenSettings;
         // private readonly string _externalCookieScheme;
 
         public AccountController(
@@ -29,7 +36,8 @@ namespace ASC.WebApi.Controllers
             //IOptions<IdentityCookieOptions> identityCookieOptions,
             IEmailSender emailSender,
             ISmsSender smsSender,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IOptions<AuthTokenSettings> authTokenSettings)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -37,6 +45,7 @@ namespace ASC.WebApi.Controllers
             _emailSender = emailSender;
             _smsSender = smsSender;
             _logger = loggerFactory.CreateLogger<AccountController>();
+            _authTokenSettings = authTokenSettings.Value;
         }
 
         //
@@ -93,7 +102,7 @@ namespace ASC.WebApi.Controllers
                     //    return RedirectToLocal(returnUrl);
                     //else
                     //    return RedirectToAction("Dashboard", "Dashboard");
-                    return Ok(new { token = Token() }); // return TOKEN!!!!
+                    return Ok(new { token = await Token(user) }); // return TOKEN!!!!
                 }
                 if (result.RequiresTwoFactor)
                 {
@@ -318,6 +327,7 @@ namespace ASC.WebApi.Controllers
         // POST: /Account/ForgotPassword
         [HttpPost]
         [AllowAnonymous]
+        [Route("forgot")]
         //[ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordViewModel model)
         {
@@ -334,7 +344,7 @@ namespace ASC.WebApi.Controllers
                 // Send an email with this link
                 var protocol = HttpContext.Request.Scheme;
                 var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var callbackUrl = $"https://localhost:4200/main/reset-password?code={code}";
+                var callbackUrl = $"http://localhost:4200/main/reset-password?code={code}";
                 //Url.Action(nameof(ResetPassword), "Account", new { userId = user.Id, code = code }, protocol: HttpContext.Request.Scheme);
                 //await _emailSender.SendEmailAsync(model.Email, "Reset Password",
                 //   $"Please reset your password by clicking here: <a href='{callbackUrl}'>link</a>");
@@ -346,6 +356,24 @@ namespace ASC.WebApi.Controllers
             // If we got this far, something failed, redisplay form
             return Ok();
             //return View(model);
+        }
+
+        [HttpGet]
+        [Route("ServiceEngineers")]
+        //[Authorize(Roles = "Admin")]
+        public async Task<IActionResult> ServiceEngineers()
+        {
+            var serviceEngineers = await _userManager.GetUsersInRoleAsync(Roles.Engineer.ToString());
+
+            // Hold all service engineers in session
+            HttpContext.Session.SetSession("ServiceEngineers", serviceEngineers);
+
+            return Ok(
+                new 
+                {
+                    ServiceEngineers = serviceEngineers == null ? null : serviceEngineers.ToList(),
+                    Registration = new { IsEdit = false }
+                });            
         }
         /*
         //
@@ -736,11 +764,66 @@ namespace ASC.WebApi.Controllers
 
         */
 
-        private string Token()
+        private async Task<string> Token(ApplicationUser user)
         {
+            var claims = await _userManager.GetClaimsAsync(user);
+            var userRoles = await _userManager.GetRolesAsync(user);        
+
+            var identityClaims = new ClaimsIdentity();
+            identityClaims.AddClaims(claims);
+            identityClaims.AddClaim(new Claim(ClaimTypes.Role, userRoles[0]));
+            //identityClaims.RemoveClaim(claims.Where(c => c.Type == "Unidade").FirstOrDefault());
+
+            //validar
+            //var claimUnidade = identityClaims.FindFirst("Unidade").Value;
+            // var claimUnidade = identityClaims.FindAll("Unidade").Select(c => c.Value);
 
 
-            return "";
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var Key = Encoding.ASCII.GetBytes(_authTokenSettings.Secret);
+
+            var token = tokenHandler.CreateToken(new SecurityTokenDescriptor // CreateToken(Key)
+            {
+                Issuer = _authTokenSettings.Issuer,
+                Audience = _authTokenSettings.Audience,
+                Subject = identityClaims,
+                Expires = DateTime.UtcNow.AddHours(_authTokenSettings.ExpireHours),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Key),
+                SecurityAlgorithms.HmacSha256Signature)
+            });
+
+            var encodedToken = tokenHandler.WriteToken(token);
+
+            return encodedToken;
+            //var response = new UserResponseLogin //GenerateResponse(encodedToken,user,claims)
+            //{
+            //    AccessToken = encodedToken,
+            //    ExpiresIn = TimeSpan.FromHours(_appSettings.ExpireHours).TotalSeconds,
+            //    UserToken = new UserToken
+            //    {
+            //        Nome = user.UserName,
+            //        Id = user.Id,
+            //        Email = user.Email,
+            //        Claims = claims.Select(c => new UserClaim { Type = c.Type, Value = c.Value })
+            //    }
+            //};
+            // log login
+
+            //var logLogin = new LogLogin(colaborador.id, colaborador.email, DateTime.Now, siglaUnidade.sigla);
+            //await _db.AddAsync(logLogin);
+            //try
+            //{
+            //    _db.SaveChanges();
+
+            //}
+            //catch (Exception ex)
+            //{
+
+            //}
+
+            //return response;
+
+            //return "";
         }
     }
 }

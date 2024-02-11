@@ -10,5 +10,10 @@
         public string EngineerEmail { get; set; }
         public string EngineerName { get; set; }
         public string EngineerPassword { get; set; }
+        public string SMTPServer { get; set; }
+        public int SMTPPort { get; set; }
+        public string SMTPAccount { get; set; }
+        public string SMTPPassword { get; set; }
+        public string Secrets { get; set; }
     }
 }

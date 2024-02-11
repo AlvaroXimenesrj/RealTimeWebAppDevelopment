@@ -54,7 +54,7 @@ namespace ASC.WebApi.Data
                 };
 
                 IdentityResult result = _userManager.CreateAsync(user, options.Value.AdminPassword).Result;
-                var claim = _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", options.Value.AdminEmail)).Result;
+                var claim = _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("Email", options.Value.AdminEmail)).Result;
                 var claim2 = _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("IsActive", "True")).Result;
 
                 // Add Admin to Admin roles
@@ -77,7 +77,7 @@ namespace ASC.WebApi.Data
                 };
 
                 IdentityResult result = _userManager.CreateAsync(user, options.Value.EngineerPassword).Result;
-                var mclaim = _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", options.Value.EngineerEmail)).Result;
+                var mclaim = _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("Email", options.Value.EngineerEmail)).Result;
                 var claim2 = _userManager.AddClaimAsync(user, new System.Security.Claims.Claim("IsActive", "True")).Result;
 
                 // Add Service Engineer to Engineer role
